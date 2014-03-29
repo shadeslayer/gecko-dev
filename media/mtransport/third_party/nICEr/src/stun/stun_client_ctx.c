@@ -173,6 +173,12 @@ int nr_stun_client_restart(nr_stun_client_ctx *ctx)
     return(_status);
   }
 
+void nr_stun_client_restart_with_cb(nr_stun_client_ctx *ctx, NR_async_cb finished_cb)
+{
+  ctx->finished_cb = finished_cb;
+  nr_stun_client_restart(ctx);
+}
+
 int
 nr_stun_client_reset(nr_stun_client_ctx *ctx)
 {

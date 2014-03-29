@@ -218,6 +218,24 @@ abort:
   return _status;
 }
 
+static int nr_turn_stun_ctx_restart(nr_turn_stun_ctx *ctx)
+{
+  int r, _status;
+  nr_turn_client_ctx *tctx = ctx->tctx;
+
+  ctx->stun->state = NR_STUN_CLIENT_STATE_RUNNING;
+  if ((r=nr_stun_client_restart_with_cb(ctx->stun, nr_turn_stun_ctx_cb))) {
+    r_log(NR_LOG_TURN, LOG_ERR, "TURN(%s): Couldn't restart STUN",
+          tctx->label);
+    ABORT(r);
+  }
+
+  _status=0;
+abort:
+  return _status;
+}
+
+
 static void nr_turn_stun_ctx_cb(NR_SOCKET s, int how, void *arg)
 {
   int r, _status;
@@ -250,7 +268,6 @@ static void nr_turn_stun_ctx_cb(NR_SOCKET s, int how, void *arg)
          we retry once. This allows the 401/438 nonce retry
          paradigm. After that, we fail */
       /* TODO(ekr@rtfm.com): 401 needs a #define */
-      /* TODO(ekr@rtfm.com): Add alternate-server (Mozilla bug 857688) */
       if (ctx->stun->error_code == 401 || ctx->stun->error_code == 438) {
         if (ctx->retry_ct > 0) {
           r_log(NR_LOG_TURN, LOG_WARNING, "TURN(%s): Exceeded the number of retries", ctx->tctx->label);
@@ -279,6 +296,11 @@ static void nr_turn_stun_ctx_cb(NR_SOCKET s, int how, void *arg)
         }
 
         ctx->retry_ct++;
+      } else if (ctx->stun->error_code == 300) {
+        r_log(NR_LOG_TURN, LOG_INFO, "TURN(%s): Alternate server recieved, restarting TURN", ctx->tctx->label);
+        ctx->retry_ct = 0;
+        nr_turn_stun_ctx_restart(ctx);
+        ctx->stun->error_code = 0;
       }
       else {
         ABORT(R_FAILED);
