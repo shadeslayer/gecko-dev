@@ -222,8 +222,24 @@ static int nr_turn_stun_ctx_restart(nr_turn_stun_ctx *ctx)
 {
   int r, _status;
   nr_turn_client_ctx *tctx = ctx->tctx;
+  nr_stun_message_attribute *ec;
+  nr_stun_message_attribute *as;
+
+  if (tctx->turn_server_addr.protocol == IPPROTO_TCP) {
+    r_log(NR_LOG_TURN, LOG_DEBUG, "TURN(%s): Closing TCP socket for restart", ctx->tctx->label);
+    nr_socket_close(tctx->sock);
+
+    if (nr_stun_message_has_attribute(ctx->stun->response, NR_STUN_ATTR_ERROR_CODE, &ec)
+       && ec->u.error_code.number == 300) {
+          if (nr_stun_message_has_attribute(ctx->stun->response, NR_STUN_ATTR_ALTERNATE_SERVER, &as)) {
+             nr_transport_addr_copy(&tctx->turn_server_addr, &as->u.alternate_server);
+          }
+      nr_turn_client_connect(tctx);
+    }
+  }
 
   ctx->stun->state = NR_STUN_CLIENT_STATE_RUNNING;
+
   if ((r=nr_stun_client_restart_with_cb(ctx->stun, nr_turn_stun_ctx_cb))) {
     r_log(NR_LOG_TURN, LOG_ERR, "TURN(%s): Couldn't restart STUN",
           tctx->label);
@@ -300,7 +316,6 @@ static void nr_turn_stun_ctx_cb(NR_SOCKET s, int how, void *arg)
         r_log(NR_LOG_TURN, LOG_INFO, "TURN(%s): Alternate server recieved, restarting TURN", ctx->tctx->label);
         ctx->retry_ct = 0;
         nr_turn_stun_ctx_restart(ctx);
-        ctx->stun->error_code = 0;
       }
       else {
         ABORT(R_FAILED);

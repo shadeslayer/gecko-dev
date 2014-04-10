@@ -164,6 +164,7 @@ int nr_stun_client_restart(nr_stun_client_ctx *ctx)
     }
 
     nr_stun_client_reset(ctx);
+    ctx->error_code = 0;
 
     if (r=nr_stun_client_start(ctx, mode, finished_cb, cb_arg))
       ABORT(r);
