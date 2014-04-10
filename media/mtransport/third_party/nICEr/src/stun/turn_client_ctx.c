@@ -233,6 +233,7 @@ static int nr_turn_stun_ctx_restart(nr_turn_stun_ctx *ctx)
        && ec->u.error_code.number == 300) {
           if (nr_stun_message_has_attribute(ctx->stun->response, NR_STUN_ATTR_ALTERNATE_SERVER, &as)) {
              nr_transport_addr_copy(&tctx->turn_server_addr, &as->u.alternate_server);
+             tctx->turn_server_addr.protocol=IPPROTO_TCP;
           }
     }
     nr_turn_client_connect(tctx);

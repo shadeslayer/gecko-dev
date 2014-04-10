@@ -163,6 +163,9 @@ int nr_stun_client_restart(nr_stun_client_ctx *ctx)
         }
     }
 
+    if (ctx->my_addr.protocol == IPPROTO_TCP) {
+      ctx->peer_addr.protocol=IPPROTO_TCP;
+    }
     nr_stun_client_reset(ctx);
     ctx->error_code = 0;
 
