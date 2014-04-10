@@ -234,8 +234,8 @@ static int nr_turn_stun_ctx_restart(nr_turn_stun_ctx *ctx)
           if (nr_stun_message_has_attribute(ctx->stun->response, NR_STUN_ATTR_ALTERNATE_SERVER, &as)) {
              nr_transport_addr_copy(&tctx->turn_server_addr, &as->u.alternate_server);
           }
-      nr_turn_client_connect(tctx);
     }
+    nr_turn_client_connect(tctx);
   }
 
   ctx->stun->state = NR_STUN_CLIENT_STATE_RUNNING;
