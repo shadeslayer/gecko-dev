@@ -224,10 +224,21 @@ static int nr_turn_stun_ctx_restart(nr_turn_stun_ctx *ctx)
   nr_turn_client_ctx *tctx = ctx->tctx;
   nr_stun_message_attribute *ec;
   nr_stun_message_attribute *as;
+  nr_socket *real_socket_;
+  nr_socket *buffered_socket_;
+  nr_transport_addr addr;
 
   if (tctx->turn_server_addr.protocol == IPPROTO_TCP) {
     r_log(NR_LOG_TURN, LOG_DEBUG, "TURN(%s): Closing TCP socket for restart", ctx->tctx->label);
     nr_socket_close(tctx->sock);
+
+    r = nr_ip4_port_to_transport_addr(0, 0, IPPROTO_TCP, &addr);
+    r = nr_socket_local_create(&addr, &real_socket_);
+    nr_socket_buffered_stun_create(real_socket_, 100000,
+                                   &buffered_socket_);
+
+    tctx->sock = buffered_socket_;
+    ctx->stun->sock = buffered_socket_;
 
     if (nr_stun_message_has_attribute(ctx->stun->response, NR_STUN_ATTR_ERROR_CODE, &ec)
        && ec->u.error_code.number == 300) {
