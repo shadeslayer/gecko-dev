@@ -394,6 +394,6 @@ static void nr_socket_buffered_stun_writable_cb(NR_SOCKET s, int how, void *arg)
   _status=0;
 abort:
   if (_status && _status != R_WOULDBLOCK) {
-    /* TODO(ekr@rtfm.com): Mark the socket as failed */
+    nr_socket_buffered_stun_failed(sock);
   }
 }
